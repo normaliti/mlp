@@ -26,4 +26,22 @@ CsvData read_csv(const std::string& path) {
     return out;
 }
 
+bool write_csv(const std::string& path, const CsvData& data) {
+    std::ofstream file(path.c_str());
+    if (!file) {
+        return false;
+    }
+    for (size_t i = 0; i < data.rows.size(); ++i) {
+        const std::vector<std::string>& row = data.rows[i];
+        for (size_t j = 0; j < row.size(); ++j) {
+            file << row[j];
+            if (j + 1 < row.size()) {
+                file << ",";
+            }
+        }
+        file << "\n";
+    }
+    return true;
+}
+
 } // namespace data

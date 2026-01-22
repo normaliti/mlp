@@ -11,6 +11,7 @@ struct CsvData {
 };
 
 CsvData read_csv(const std::string& path);
+bool write_csv(const std::string& path, const CsvData& data);
 
 } // namespace data
 

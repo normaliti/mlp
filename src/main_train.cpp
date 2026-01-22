@@ -3,7 +3,7 @@
 #include <iostream>
 
 int main() {
-    utils::print_banner("train");
+    utils::print_message("train");
     mlp::MLP model;
     model.train();
     return 0;

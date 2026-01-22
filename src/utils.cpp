@@ -4,7 +4,7 @@
 
 namespace utils {
 
-void print_banner(const std::string& name) {
+void print_message(const std::string& name) {
     std::cout << "[mlp] " << name << std::endl;
 }
 
