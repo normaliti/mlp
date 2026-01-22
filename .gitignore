@@ -1,14 +1,16 @@
-
 # build artifacts
-  obj/
-  split
-  train
-  predict
+obj/
+split
+train
+predict
 
 # models / outputs
-  models/
-  *.log
+models/
+*.log
 
 # generated datasets
-  data/*
-  !data.csv
+data/*
+!data.csv
+
+# subject file
+en.subject.pdf
