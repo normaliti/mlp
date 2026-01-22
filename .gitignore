@@ -1,0 +1,14 @@
+
+# build artifacts
+  obj/
+  split
+  train
+  predict
+
+# models / outputs
+  models/
+  *.log
+
+# generated datasets
+  data/*
+  !data.csv
