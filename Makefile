@@ -3,15 +3,17 @@ NAME_TRAIN = train
 NAME_PREDICT = predict
 
 CXX = c++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -Iinclude
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Iinclude
 
 SRC_DIR = src
 OBJ_DIR = obj
 
 COMMON_SRCS = \
 	$(SRC_DIR)/data_csv.cpp \
+	$(SRC_DIR)/dataset.cpp \
 	$(SRC_DIR)/utils.cpp \
-	$(SRC_DIR)/mlp.cpp
+	$(SRC_DIR)/mlp.cpp \
+	$(SRC_DIR)/mlp_io.cpp
 
 SPLIT_SRCS = $(SRC_DIR)/main_split.cpp
 TRAIN_SRCS = $(SRC_DIR)/main_train.cpp
