@@ -51,6 +51,7 @@ Options:
 - `--epochs 50`          (default: 50)
 - `--batch_size 8`       (default: 8)
 - `--lr 0.1`             (default: 0.01)
+- `--activation sigmoid|tanh|relu` (default: sigmoid)
 
 You can also pass explicit output paths:
 ```
@@ -68,6 +69,9 @@ Example:
 ```
 ./predict models/model.txt models/scaler.txt data_validation.csv
 ```
+Outputs:
+- Binary cross-entropy, accuracy, precision, recall, F1
+- `models/roc.csv` and `models/roc.png`
 
 ## Plots
 Training history is saved to `models/history.csv`.
@@ -80,6 +84,8 @@ python3 scripts/plot.py
 Outputs:
 - `models/loss.png`
 - `models/accuracy.png`
+Predict generates:
+- `models/roc.png`
 
 You can pass multiple history files to compare curves:
 ```
@@ -99,7 +105,4 @@ python3 scripts/plot.py models/history_run1.csv models/history_run2.csv
 - C++17 compiler (for `std::filesystem`)
 - Python 3 + matplotlib (for plots)
 
-Install matplotlib if needed:
-```
-python3 -m pip install matplotlib
-```
+`make` will automatically install matplotlib (via `make deps`) if it is missing.

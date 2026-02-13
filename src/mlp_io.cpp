@@ -5,6 +5,25 @@
 
 namespace mlp {
 
+static const char* activation_name(Activation act) {
+    switch (act) {
+    case Activation::Sigmoid:
+        return "sigmoid";
+    case Activation::Tanh:
+        return "tanh";
+    case Activation::Relu:
+        return "relu";
+    }
+    return "sigmoid";
+}
+
+static Activation activation_from_name(const std::string& name) {
+    if (name == "sigmoid") return Activation::Sigmoid;
+    if (name == "tanh") return Activation::Tanh;
+    if (name == "relu") return Activation::Relu;
+    return Activation::Sigmoid;
+}
+
 bool save_model(const MLP& model, const std::string& path) {
     if (model.layers_.empty() || model.sizes_.empty()) {
         return false;
@@ -18,6 +37,7 @@ bool save_model(const MLP& model, const std::string& path) {
         file << model.sizes_[i] << (i + 1 < model.sizes_.size() ? " " : "");
     }
     file << "\n";
+    file << "activation " << activation_name(model.activation_) << "\n";
     for (size_t l = 0; l < model.layers_.size(); ++l) {
         const MLP::Layer& layer = model.layers_[l];
         file << "layer " << l << "\n";
@@ -52,13 +72,21 @@ bool load_model(MLP& model, const std::string& path) {
     for (size_t i = 0; i < n_layers; ++i) {
         file >> model.sizes_[i];
     }
+    model.activation_ = Activation::Sigmoid;
     model.layers_.clear();
+    file >> tag;
+    if (tag == "activation") {
+        std::string name;
+        file >> name;
+        model.activation_ = activation_from_name(name);
+        file >> tag;
+    }
     for (size_t l = 0; l + 1 < n_layers; ++l) {
-        size_t layer_idx = 0;
-        file >> tag >> layer_idx;
         if (tag != "layer") {
             return false;
         }
+        size_t layer_idx = 0;
+        file >> layer_idx;
         MLP::Layer layer;
         size_t out = 0;
         size_t in = 0;
@@ -82,6 +110,9 @@ bool load_model(MLP& model, const std::string& path) {
             file >> layer.b[i];
         }
         model.layers_.push_back(layer);
+        if (l + 2 < n_layers) {
+            file >> tag;
+        }
     }
     return true;
 }

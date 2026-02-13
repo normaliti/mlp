@@ -6,18 +6,21 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 static void print_usage(const char* prog) {
     std::cout << "Usage:\n";
-    std::cout << "  " << prog << " <train_csv> <valid_csv> [scaler_out] [model_out] [options]\n";
+    std::cout << "  " << prog << " <train_csv> <valid_csv> [scaler_out] [model_out] [options] \n";
     std::cout << "\nExample:\n";
     std::cout << "  " << prog << " data_training.csv data_validation.csv models/scaler.txt \\\n";
-    std::cout << "    models/model.txt --layers 30 24 24 2 --epochs 50 --batch_size 8 --lr 0.01\n";
+    std::cout << "    models/model.txt --layers 30 24 24 2 --epochs 50 --batch_size 8 --lr 0.01 --activation sigmoid --plot\n";
     std::cout << "\nOptions:\n";
     std::cout << "  --layers <list>       Example: --layers 30 24 24 2\n";
     std::cout << "  --epochs <int>        Default: 50\n";
     std::cout << "  --batch_size <int>    Default: 8\n";
     std::cout << "  --lr <float>          Default: 0.01\n";
+    std::cout << "  --activation <name>   sigmoid | tanh | relu (default: sigmoid)\n";
+    std::cout << "  --plot                Generate loss/accuracy plots after training\n";
 }
 
 static void ensure_models_dir() {
@@ -57,6 +60,8 @@ int main(int argc, char** argv) {
     cfg.batch_size = 8;
     cfg.learning_rate = 0.01;
     cfg.history_path = "models/history.csv";
+    cfg.activation = mlp::Activation::Sigmoid;
+    bool do_plot = false;
 
     while (argi < argc) {
         std::string key = argv[argi];
@@ -76,6 +81,20 @@ int main(int argc, char** argv) {
         } else if (key == "--lr" && argi + 1 < argc) {
             cfg.learning_rate = std::atof(argv[argi + 1]);
             argi += 2;
+        } else if (key == "--activation" && argi + 1 < argc) {
+            std::string name = argv[argi + 1];
+            if (name == "sigmoid") cfg.activation = mlp::Activation::Sigmoid;
+            else if (name == "tanh") cfg.activation = mlp::Activation::Tanh;
+            else if (name == "relu") cfg.activation = mlp::Activation::Relu;
+            else {
+                std::cout << "Unknown activation: " << name << "\n";
+                print_usage(argv[0]);
+                return 1;
+            }
+            argi += 2;
+        } else if (key == "--plot") {
+            do_plot = true;
+            ++argi;
         } else {
             std::cout << "Unknown or incomplete option: " << key << "\n";
             print_usage(argv[0]);
@@ -144,6 +163,14 @@ int main(int argc, char** argv) {
         std::cout << "Warning: could not save model to " << model_path << "\n";
     } else {
         std::cout << "Model saved to: " << model_path << "\n";
+    }
+
+    if (do_plot) {
+        std::string cmd = "python3 scripts/plot.py " + cfg.history_path;
+        int rc = std::system(cmd.c_str());
+        if (rc != 0) {
+            std::cout << "Warning: failed to generate plots (exit code " << rc << ")\n";
+        }
     }
     return 0;
 }

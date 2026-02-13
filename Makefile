@@ -4,6 +4,7 @@ NAME_PREDICT = predict
 
 CXX = c++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -Iinclude
+PYTHON = python3
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -24,7 +25,7 @@ SPLIT_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SPLIT_SRCS))
 TRAIN_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(TRAIN_SRCS))
 PREDICT_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(PREDICT_SRCS))
 
-all: $(NAME_SPLIT) $(NAME_TRAIN) $(NAME_PREDICT)
+all: deps $(NAME_SPLIT) $(NAME_TRAIN) $(NAME_PREDICT)
 
 $(NAME_SPLIT): $(COMMON_OBJS) $(SPLIT_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -47,4 +48,8 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+deps:
+	@$(PYTHON) -c "import importlib.util,sys; sys.exit(0 if importlib.util.find_spec('matplotlib') else 1)" \
+		|| $(PYTHON) -m pip install --user matplotlib
+
+.PHONY: all clean fclean re deps

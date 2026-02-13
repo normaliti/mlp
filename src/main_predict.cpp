@@ -3,9 +3,14 @@
 #include "mlp_io.hpp"
 #include "dataset.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 static void print_usage(const char* prog) {
     std::cout << "Usage:\n";
@@ -14,11 +19,57 @@ static void print_usage(const char* prog) {
     std::cout << "  " << prog << " model.txt scaler.txt data_validation.csv\n";
 }
 
-static double cross_entropy(const std::vector<double>& probs, int y) {
+static double binary_cross_entropy(double p, int y) {
     const double eps = 1e-12;
-    double p = probs[y];
     if (p < eps) p = eps;
-    return -std::log(p);
+    if (p > 1.0 - eps) p = 1.0 - eps;
+    return -(y * std::log(p) + (1 - y) * std::log(1.0 - p));
+}
+
+struct ScoredLabel {
+    double score;
+    int label;
+};
+
+static void write_roc_csv(const std::vector<ScoredLabel>& data, const std::string& path) {
+    size_t pos = 0;
+    for (size_t i = 0; i < data.size(); ++i) {
+        if (data[i].label == 1) {
+            pos++;
+        }
+    }
+    size_t neg = data.size() - pos;
+
+    std::vector<ScoredLabel> sorted = data;
+    std::sort(sorted.begin(), sorted.end(),
+              [](const ScoredLabel& a, const ScoredLabel& b) { return a.score > b.score; });
+
+    std::filesystem::create_directories("models");
+    std::ofstream file(path.c_str());
+    if (!file) {
+        std::cout << "Warning: could not write ROC CSV: " << path << "\n";
+        return;
+    }
+    file << "threshold,fpr,tpr\n";
+
+    size_t tp = 0;
+    size_t fp = 0;
+    size_t idx = 0;
+    file << "inf,0,0\n";
+    while (idx < sorted.size()) {
+        double thr = sorted[idx].score;
+        while (idx < sorted.size() && sorted[idx].score == thr) {
+            if (sorted[idx].label == 1) {
+                tp++;
+            } else {
+                fp++;
+            }
+            idx++;
+        }
+        double tpr = (pos == 0) ? 0.0 : static_cast<double>(tp) / static_cast<double>(pos);
+        double fpr = (neg == 0) ? 0.0 : static_cast<double>(fp) / static_cast<double>(neg);
+        file << thr << "," << fpr << "," << tpr << "\n";
+    }
 }
 
 int main(int argc, char** argv) {
@@ -55,19 +106,49 @@ int main(int argc, char** argv) {
 
     double loss = 0.0;
     int correct = 0;
+    int tp = 0;
+    int fp = 0;
+    int fn = 0;
+    std::vector<ScoredLabel> scored;
+    scored.reserve(data.x.size());
+
     for (size_t i = 0; i < data.x.size(); ++i) {
         std::vector<double> out = model.predict_proba(data.x[i]);
-        loss += cross_entropy(out, data.y[i]);
-        int pred = (out[0] > out[1]) ? 0 : 1;
-        if (pred == data.y[i]) {
+        double p = out.size() > 1 ? out[1] : 0.0;
+        int y = data.y[i];
+        loss += binary_cross_entropy(p, y);
+
+        int pred = (p >= 0.5) ? 1 : 0;
+        if (pred == y) {
             correct++;
         }
+        if (pred == 1 && y == 1) tp++;
+        else if (pred == 1 && y == 0) fp++;
+        else if (pred == 0 && y == 0) {}
+        else fn++;
+
+        scored.push_back(ScoredLabel{p, y});
     }
+
     loss /= static_cast<double>(data.x.size());
     double acc = static_cast<double>(correct) / static_cast<double>(data.x.size());
+    double precision = (tp + fp) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fp);
+    double recall = (tp + fn) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fn);
+    double f1 = (precision + recall) == 0.0 ? 0.0 : 2.0 * precision * recall / (precision + recall);
 
     std::cout << "Samples: " << data.x.size() << "\n";
-    std::cout << "Loss: " << loss << "\n";
+    std::cout << "Binary cross-entropy: " << loss << "\n";
     std::cout << "Accuracy: " << acc << "\n";
+    std::cout << "Precision: " << precision << "\n";
+    std::cout << "Recall: " << recall << "\n";
+    std::cout << "F1: " << f1 << "\n";
+
+    std::string roc_csv = "models/roc.csv";
+    write_roc_csv(scored, roc_csv);
+    std::string cmd = "python3 scripts/roc_plot.py " + roc_csv;
+    int rc = std::system(cmd.c_str());
+    if (rc != 0) {
+        std::cout << "Warning: failed to generate ROC plot (exit code " << rc << ")\n";
+    }
     return 0;
 }

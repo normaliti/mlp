@@ -1,6 +1,7 @@
 #include "dataset.hpp"
 #include "data_csv.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <limits>
@@ -42,15 +43,14 @@ Scaler fit_minmax(const Dataset& data) {
     if (data.x.empty()) {
         return s;
     }
-    size_t n_features = data.x[0].size();
-    s.min.assign(n_features, std::numeric_limits<double>::infinity());
-    s.max.assign(n_features, -std::numeric_limits<double>::infinity());
+    const size_t n_features = data.x[0].size();
+    s.min = data.x[0];
+    s.max = data.x[0];
 
-    for (size_t i = 0; i < data.x.size(); ++i) {
+    for (size_t i = 1; i < data.x.size(); ++i) {
         for (size_t j = 0; j < n_features; ++j) {
-            double v = data.x[i][j];
-            if (v < s.min[j]) s.min[j] = v;
-            if (v > s.max[j]) s.max[j] = v;
+            s.min[j] = std::min(s.min[j], data.x[i][j]);
+            s.max[j] = std::max(s.max[j], data.x[i][j]);
         }
     }
     return s;
