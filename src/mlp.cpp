@@ -1,7 +1,6 @@
 #include "mlp.hpp"
 #include "dataset.hpp"
 #include <fstream>
-
 #include <cmath>
 #include <iostream>
 #include <numeric>
@@ -11,8 +10,6 @@
 namespace mlp {
 
 MLP::MLP() : activation_(Activation::Sigmoid) {}
-
-
 
 static double activation_forward(double z, Activation act) {
     switch (act) {
@@ -60,7 +57,7 @@ static std::vector<double> softmax(const std::vector<double>& z) {
     return out;
 }
 
-static double binary_cross_entropy(double p, int y) {
+double binary_cross_entropy(double p, int y) {
     const double eps = 1e-12;
     if (p < eps) p = eps;
     if (p > 1.0 - eps) p = 1.0 - eps;
@@ -72,48 +69,58 @@ void MLP::init_weights(const std::vector<int>& sizes, unsigned int seed) {
     sizes_ = sizes;
     std::mt19937 rng(seed);
 
-    for (size_t l = 0; l + 1 < sizes.size(); ++l) {
+    for (size_t l = 0; l < sizes.size() - 1; l++) {
         int in = sizes[l];
         int out = sizes[l + 1];
         Layer layer;
         layer.W.assign(out, std::vector<double>(in, 0.0));
         layer.b.assign(out, 0.0);
-        double limit = 0.0;
-        if (activation_ == Activation::Relu) {
-            limit = std::sqrt(6.0 / static_cast<double>(in));
-        } else {
-            limit = std::sqrt(6.0 / static_cast<double>(in + out));
-        }
-        std::uniform_real_distribution<double> dist(-limit, limit);
-        for (int i = 0; i < out; ++i) {
-            for (int j = 0; j < in; ++j) {
+        double stddev = 0.0;
+        if (activation_ == Activation::Relu) 
+            stddev = stddev = std::sqrt(2.0 / static_cast<double>(in));        
+        else              
+            stddev = std::sqrt(2 / static_cast<double>(in + out));        
+        
+        std::normal_distribution<double> dist(0.0, stddev);
+        
+        for (int i = 0; i < out; i++)
+        {
+            for (int j = 0; j < in; j++) 
+            {
                 layer.W[i][j] = dist(rng);
             }
-            layer.b[i] = dist(rng);
+            //layer.b[i] = dist(rng);
+            layer.b[i] = 0;
         }
         layers_.push_back(layer);
     }
 }
 
-std::vector<double> MLP::feedforward(const std::vector<double>& x) const {
+std::vector<double> MLP::feedforward(const std::vector<double>& x) const 
+{
     std::vector<double> a = x;
-    for (size_t l = 0; l < layers_.size(); ++l) {
-        const Layer& layer = layers_[l];
-        std::vector<double> z(layer.W.size(), 0.0);
-        for (size_t i = 0; i < layer.W.size(); ++i) {
-            double sum = layer.b[i];
-            for (size_t j = 0; j < layer.W[i].size(); ++j) {
+    double sum;
+    for (size_t l = 0; l < layers_.size(); l++) // layers_.size = 3
+    { 
+        const Layer& layer = layers_[l]; // current layer 0 = W and b, W has a size (24*30)
+        std::vector<double> z(layer.W.size(), 0.0);// out values in first hidden layer vector has size = 24
+        for (size_t i = 0; i < layer.W.size(); i++) 
+        {
+            sum = layer.b[i];
+            for (size_t j = 0; j < layer.W[i].size(); j++) 
+            {
                 sum += layer.W[i][j] * a[j];
             }
             z[i] = sum;
         }
-        if (l + 1 == layers_.size()) {
+        if (l + 1 == layers_.size()) 
             a = softmax(z);
-        } else {
+         
+        else 
+        {
             a.resize(z.size());
-            for (size_t i = 0; i < z.size(); ++i) {
-                a[i] = activation_forward(z[i], activation_);
-            }
+            for (size_t i = 0; i < z.size(); i++) 
+                a[i] = activation_forward(z[i], activation_);            
         }
     }
     return a;
@@ -222,9 +229,10 @@ MLP::Metrics MLP::evaluate(const dataset::Dataset& data) const {
     return m;
 }
 
-std::vector<double> MLP::predict_proba(const std::vector<double>& x) const {
+std::vector<double> MLP::predict(const std::vector<double>& x) const {
     return feedforward(x);
 }
+
 
 void MLP::train(const MLPConfig& cfg, const dataset::Dataset& train, const dataset::Dataset& valid) {
     std::cout << "Layers: ";
@@ -293,8 +301,6 @@ void MLP::train(const MLPConfig& cfg, const dataset::Dataset& train, const datas
     }
 }
 
-void MLP::predict() {
-    std::cout << "Predict stub" << std::endl;
-}
+
 
 } // namespace mlp

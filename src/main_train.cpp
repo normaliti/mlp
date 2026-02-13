@@ -43,35 +43,27 @@ int main(int argc, char** argv) {
     std::string train_path = argv[1];
     std::string valid_path = argv[2];
     std::string scaler_path = "models/scaler.txt";
-    std::string model_path = "models/model.txt";
+    std::string model_path = "models/model.txt";    
 
-    int arg = 3;
-/*     if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
-        scaler_path = argv[arg];
-        ++arg;
-    }
-    if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
-        model_path = argv[arg];
-        ++arg;
-    } */
-
+    // MLP CONFIGURATION
     mlp::MLPConfig cfg;
     cfg.layers.clear();
     cfg.epochs = 50;
     cfg.batch_size = 8;
-    cfg.learning_rate = 0.01;
+    cfg.learning_rate = 0.1;
     cfg.history_path = "models/history.csv";
     cfg.activation = mlp::Activation::Sigmoid;
     bool do_plot = false;
 
+    int arg = 3;
     while (arg < argc) {
         std::string key = argv[arg];
         if (key == "--layers") {
             cfg.layers.clear();
-            ++arg;
+            arg++;
             while (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
                 cfg.layers.push_back(std::atoi(argv[arg]));
-                ++arg;
+                arg++;
             }
         } else if (key == "--epochs" && arg + 1 < argc) {
             cfg.epochs = std::atoi(argv[arg + 1]);
@@ -95,7 +87,7 @@ int main(int argc, char** argv) {
             arg += 2;
         } else if (key == "--plot") {
             do_plot = true;
-            ++arg;
+            arg++;
         } else {
             std::cout << "Unknown or incomplete option: " << key << "\n";
             print_usage(argv[0]);
@@ -103,6 +95,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    // if user don't give a MLP architecture, we use default architecture
     if (cfg.layers.empty()) {
         cfg.layers.push_back(30);
         cfg.layers.push_back(24);
@@ -110,6 +103,7 @@ int main(int argc, char** argv) {
         cfg.layers.push_back(2);
     }
 
+    // checking architecture  and parameters of MLP
     if (cfg.layers.size() < 4) {
         std::cout << "Error: need input + at least 2 hidden + output layers.\n";
         return 1;
@@ -127,6 +121,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+
+    // DATA PREPROCESSING
     dataset::Dataset train = dataset::load_dataset(train_path);
     dataset::Dataset valid = dataset::load_dataset(valid_path);
 
@@ -139,26 +135,18 @@ int main(int argc, char** argv) {
     dataset::apply_minmax(train, s);
     dataset::apply_minmax(valid, s);
 
+    // MODEL'S PATH CREATING
     ensure_models_dir();
 
     if (!dataset::save_scaler(scaler_path, s)) {
         std::cout << "Warning: could not save scaler to " << scaler_path << "\n";
     }
 
-    size_t n_features = train.x[0].size();
-    std::cout << "Train samples: " << train.x.size() << ", features: " << n_features << "\n";
-    std::cout << "Valid samples: " << valid.x.size() << ", features: " << valid.x[0].size() << "\n";
-    std::cout << "Scaler saved to: " << scaler_path << "\n";
 
-    if (!train.x.empty() && !train.x[0].empty()) {
-        std::cout << "First train sample (first 5 features): ";
-        for (size_t i = 0; i < train.x[0].size() && i < 5; ++i) {
-            std::cout << train.x[0][i] << (i + 1 < 5 ? ", " : "");
-        }
-        std::cout << "\n";
-    }
-
+    // MODEL TRAINING
     mlp::MLP model;
+
+
     model.train(cfg, train, valid);
     if (!mlp::save_model(model, model_path)) {
         std::cout << "Warning: could not save model to " << model_path << "\n";
@@ -166,6 +154,7 @@ int main(int argc, char** argv) {
         std::cout << "Model saved to: " << model_path << "\n";
     }
 
+    // ACCURACY AND LOSS GRAPHS PLOTTING
     if (do_plot) {
         std::string cmd = "python3 scripts/plot.py " + cfg.history_path;
         int rc = std::system(cmd.c_str());

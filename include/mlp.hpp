@@ -1,6 +1,7 @@
 #ifndef MLP_HPP
 #define MLP_HPP
 
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -29,8 +30,8 @@ class MLP {
 public:
     MLP();
     void train(const MLPConfig& cfg, const dataset::Dataset& train, const dataset::Dataset& valid);
-    void predict();
-    std::vector<double> predict_proba(const std::vector<double>& x) const;
+    std::vector<double> predict(const std::vector<double>& x) const;
+    
 
 private:
     friend bool save_model(const MLP& model, const std::string& path);
@@ -62,6 +63,8 @@ private:
     void apply_grads(const std::vector<Layer>& grads, double lr);
     Metrics evaluate(const dataset::Dataset& data) const;
 };
+
+double binary_cross_entropy(double p, int y);
 
 } // namespace mlp
 

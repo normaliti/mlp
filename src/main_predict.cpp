@@ -19,12 +19,12 @@ static void print_usage(const char* prog) {
     std::cout << "  " << prog << " model.txt scaler.txt data_validation.csv\n";
 }
 
-static double binary_cross_entropy(double p, int y) {
+/* static double binary_cross_entropy(double p, int y) {
     const double eps = 1e-12;
     if (p < eps) p = eps;
     if (p > 1.0 - eps) p = 1.0 - eps;
     return -(y * std::log(p) + (1 - y) * std::log(1.0 - p));
-}
+} */
 
 struct ScoredLabel {
     double score;
@@ -113,10 +113,10 @@ int main(int argc, char** argv) {
     scored.reserve(data.x.size());
 
     for (size_t i = 0; i < data.x.size(); ++i) {
-        std::vector<double> out = model.predict_proba(data.x[i]);
+        std::vector<double> out = model.predict(data.x[i]);
         double p = out.size() > 1 ? out[1] : 0.0;
         int y = data.y[i];
-        loss += binary_cross_entropy(p, y);
+        loss += mlp::binary_cross_entropy(p, y);
 
         int pred = (p >= 0.5) ? 1 : 0;
         if (pred == y) {
