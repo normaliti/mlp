@@ -6,6 +6,7 @@
 #include <iostream>
 #include <numeric>
 #include <random>
+#include <algorithm>
 
 namespace mlp {
 

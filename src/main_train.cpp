@@ -10,10 +10,10 @@
 
 static void print_usage(const char* prog) {
     std::cout << "Usage:\n";
-    std::cout << "  " << prog << " <train_csv> <valid_csv> [scaler_out] [model_out] [options] \n";
+    std::cout << "  " << prog << " <train_csv> <valid_csv> [options] \n";
     std::cout << "\nExample:\n";
-    std::cout << "  " << prog << " data_training.csv data_validation.csv models/scaler.txt \\\n";
-    std::cout << "    models/model.txt --layers 30 24 24 2 --epochs 50 --batch_size 8 --lr 0.01 --activation sigmoid --plot\n";
+    std::cout << "  " << prog << " data_training.csv data_validation.csv \\\n";
+    std::cout << "    --layers 30 24 24 2 --epochs 50 --batch_size 8 --lr 0.01 --activation sigmoid --plot\n";
     std::cout << "\nOptions:\n";
     std::cout << "  --layers <list>       Example: --layers 30 24 24 2\n";
     std::cout << "  --epochs <int>        Default: 50\n";
@@ -46,14 +46,14 @@ int main(int argc, char** argv) {
     std::string model_path = "models/model.txt";
 
     int arg = 3;
-    if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
+/*     if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
         scaler_path = argv[arg];
         ++arg;
     }
     if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
         model_path = argv[arg];
         ++arg;
-    }
+    } */
 
     mlp::MLPConfig cfg;
     cfg.layers.clear();
