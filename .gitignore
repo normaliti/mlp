@@ -10,7 +10,10 @@ models/
 
 # generated datasets
 data/*
-!data.csv
+!data/data.csv
 
 # subject file
 en.subject.pdf
+
+# settings artifacts
+.vscode
