@@ -39,19 +39,20 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    
     std::string train_path = argv[1];
     std::string valid_path = argv[2];
     std::string scaler_path = "models/scaler.txt";
     std::string model_path = "models/model.txt";
 
-    int argi = 3;
-    if (argi < argc && std::string(argv[argi]).rfind("--", 0) != 0) {
-        scaler_path = argv[argi];
-        ++argi;
+    int arg = 3;
+    if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
+        scaler_path = argv[arg];
+        ++arg;
     }
-    if (argi < argc && std::string(argv[argi]).rfind("--", 0) != 0) {
-        model_path = argv[argi];
-        ++argi;
+    if (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
+        model_path = argv[arg];
+        ++arg;
     }
 
     mlp::MLPConfig cfg;
@@ -63,26 +64,26 @@ int main(int argc, char** argv) {
     cfg.activation = mlp::Activation::Sigmoid;
     bool do_plot = false;
 
-    while (argi < argc) {
-        std::string key = argv[argi];
+    while (arg < argc) {
+        std::string key = argv[arg];
         if (key == "--layers") {
             cfg.layers.clear();
-            ++argi;
-            while (argi < argc && std::string(argv[argi]).rfind("--", 0) != 0) {
-                cfg.layers.push_back(std::atoi(argv[argi]));
-                ++argi;
+            ++arg;
+            while (arg < argc && std::string(argv[arg]).rfind("--", 0) != 0) {
+                cfg.layers.push_back(std::atoi(argv[arg]));
+                ++arg;
             }
-        } else if (key == "--epochs" && argi + 1 < argc) {
-            cfg.epochs = std::atoi(argv[argi + 1]);
-            argi += 2;
-        } else if (key == "--batch_size" && argi + 1 < argc) {
-            cfg.batch_size = std::atoi(argv[argi + 1]);
-            argi += 2;
-        } else if (key == "--lr" && argi + 1 < argc) {
-            cfg.learning_rate = std::atof(argv[argi + 1]);
-            argi += 2;
-        } else if (key == "--activation" && argi + 1 < argc) {
-            std::string name = argv[argi + 1];
+        } else if (key == "--epochs" && arg + 1 < argc) {
+            cfg.epochs = std::atoi(argv[arg + 1]);
+            arg += 2;
+        } else if (key == "--batch_size" && arg + 1 < argc) {
+            cfg.batch_size = std::atoi(argv[arg + 1]);
+            arg += 2;
+        } else if (key == "--lr" && arg + 1 < argc) {
+            cfg.learning_rate = std::atof(argv[arg + 1]);
+            arg += 2;
+        } else if (key == "--activation" && arg + 1 < argc) {
+            std::string name = argv[arg + 1];
             if (name == "sigmoid") cfg.activation = mlp::Activation::Sigmoid;
             else if (name == "tanh") cfg.activation = mlp::Activation::Tanh;
             else if (name == "relu") cfg.activation = mlp::Activation::Relu;
@@ -91,10 +92,10 @@ int main(int argc, char** argv) {
                 print_usage(argv[0]);
                 return 1;
             }
-            argi += 2;
+            arg += 2;
         } else if (key == "--plot") {
             do_plot = true;
-            ++argi;
+            ++arg;
         } else {
             std::cout << "Unknown or incomplete option: " << key << "\n";
             print_usage(argv[0]);
