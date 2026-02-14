@@ -79,8 +79,8 @@ void MLP::init_weights(const std::vector<int>& sizes, unsigned int seed) {
         if (activation_ == Activation::Relu) 
             stddev = stddev = std::sqrt(2.0 / static_cast<double>(in));        
         else              
-            stddev = std::sqrt(2 / static_cast<double>(in + out));        
-        
+            //stddev = std::sqrt(2 / static_cast<double>(in + out));        
+            stddev = std::sqrt(1 / static_cast<double>(in));
         std::normal_distribution<double> dist(0.0, stddev);
         
         for (int i = 0; i < out; i++)
@@ -133,10 +133,11 @@ void MLP::feedforward_with_cache(const std::vector<double>& x,
     Z.clear();
     A.push_back(x);
 
-    for (size_t l = 0; l < layers_.size(); ++l) {
+    for (size_t l = 0; l < layers_.size(); l++) {
         const Layer& layer = layers_[l];
+        
         std::vector<double> z(layer.W.size(), 0.0);
-        for (size_t i = 0; i < layer.W.size(); ++i) {
+        for (size_t i = 0; i < layer.W.size(); i++) {
             double sum = layer.b[i];
             for (size_t j = 0; j < layer.W[i].size(); ++j) {
                 sum += layer.W[i][j] * A[l][j];
