@@ -22,16 +22,19 @@ struct MLPConfig {
     int epochs;
     int batch_size;
     double learning_rate;
+    unsigned int seed;
     std::string history_path;
     Activation activation;
 };
 
 class MLP {
 public:
+    using Vec = std::vector<double>;
+    using Mat = std::vector< Vec >;
+
     MLP();
     void train(const MLPConfig& cfg, const dataset::Dataset& train, const dataset::Dataset& valid);
-    std::vector<double> predict(const std::vector<double>& x) const;
-    
+    Vec predict(const Vec& x) const;
 
 private:
     friend bool save_model(const MLP& model, const std::string& path);
@@ -43,21 +46,27 @@ private:
     };
 
     struct Layer {
-        std::vector< std::vector<double> > W;
-        std::vector<double> b;
+        Mat W;
+        Vec b;
+    };
+
+    struct ForwardCache {
+        std::vector<Vec> A;
+        std::vector<Vec> Z;
     };
 
     std::vector<Layer> layers_;
     std::vector<int> sizes_;
     Activation activation_;
 
+    static double activation_forward(double z, Activation act);
+    static double activation_backward(double z, double a, Activation act);
+    static Vec softmax(const Vec& z);
+
     void init_weights(const std::vector<int>& sizes, unsigned int seed);
-    std::vector<double> feedforward(const std::vector<double>& x) const;
-    void feedforward_with_cache(const std::vector<double>& x,
-                                std::vector< std::vector<double> >& A,
-                                std::vector< std::vector<double> >& Z) const;
-    void backprop(const std::vector< std::vector<double> >& A,
-                  const std::vector< std::vector<double> >& Z,
+    Vec forward(const Vec& x, ForwardCache* cache) const;
+    void backprop(const std::vector<Vec>& A,
+                  const std::vector<Vec>& Z,
                   int y,
                   std::vector<Layer>& grads) const;
     void apply_grads(const std::vector<Layer>& grads, double lr);

@@ -4,7 +4,6 @@
 #include "dataset.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -19,13 +18,6 @@ static void print_usage(const char* prog) {
     std::cout << "  " << prog << " model.txt scaler.txt data_validation.csv\n";
 }
 
-/* static double binary_cross_entropy(double p, int y) {
-    const double eps = 1e-12;
-    if (p < eps) p = eps;
-    if (p > 1.0 - eps) p = 1.0 - eps;
-    return -(y * std::log(p) + (1 - y) * std::log(1.0 - p));
-} */
-
 struct ScoredLabel {
     double score;
     int label;
@@ -35,10 +27,10 @@ static void write_roc_csv(const std::vector<ScoredLabel>& data, const std::strin
     size_t pos = 0;
     for (size_t i = 0; i < data.size(); ++i) {
         if (data[i].label == 1) {
-            pos++;
+            ++pos;
         }
     }
-    size_t neg = data.size() - pos;
+    const size_t neg = data.size() - pos;
 
     std::vector<ScoredLabel> sorted = data;
     std::sort(sorted.begin(), sorted.end(),
@@ -57,17 +49,17 @@ static void write_roc_csv(const std::vector<ScoredLabel>& data, const std::strin
     size_t idx = 0;
     file << "inf,0,0\n";
     while (idx < sorted.size()) {
-        double thr = sorted[idx].score;
+        const double thr = sorted[idx].score;
         while (idx < sorted.size() && sorted[idx].score == thr) {
             if (sorted[idx].label == 1) {
-                tp++;
+                ++tp;
             } else {
-                fp++;
+                ++fp;
             }
-            idx++;
+            ++idx;
         }
-        double tpr = (pos == 0) ? 0.0 : static_cast<double>(tp) / static_cast<double>(pos);
-        double fpr = (neg == 0) ? 0.0 : static_cast<double>(fp) / static_cast<double>(neg);
+        const double tpr = (pos == 0) ? 0.0 : static_cast<double>(tp) / static_cast<double>(pos);
+        const double fpr = (neg == 0) ? 0.0 : static_cast<double>(fp) / static_cast<double>(neg);
         file << thr << "," << fpr << "," << tpr << "\n";
     }
 }
@@ -80,9 +72,9 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::string model_path = argv[1];
-    std::string scaler_path = argv[2];
-    std::string data_path = argv[3];
+    const std::string model_path = argv[1];
+    const std::string scaler_path = argv[2];
+    const std::string data_path = argv[3];
 
     mlp::MLP model;
     if (!mlp::load_model(model, model_path)) {
@@ -102,7 +94,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    dataset::apply_minmax(data, s);
+    if (!dataset::apply_minmax(data, s)) {
+        std::cout << "Error: failed to apply min-max scaling (shape mismatch).\n";
+        return 1;
+    }
 
     double loss = 0.0;
     int correct = 0;
@@ -113,28 +108,32 @@ int main(int argc, char** argv) {
     scored.reserve(data.x.size());
 
     for (size_t i = 0; i < data.x.size(); ++i) {
-        std::vector<double> out = model.predict(data.x[i]);
-        double p = out.size() > 1 ? out[1] : 0.0;
-        int y = data.y[i];
+        const std::vector<double> out = model.predict(data.x[i]);
+        if (out.size() < 2) {
+            std::cout << "Error: model prediction has invalid output size.\n";
+            return 1;
+        }
+
+        const double p = out[1];
+        const int y = data.y[i];
         loss += mlp::binary_cross_entropy(p, y);
 
-        int pred = (p >= 0.5) ? 1 : 0;
+        const int pred = (p >= 0.5) ? 1 : 0;
         if (pred == y) {
-            correct++;
+            ++correct;
         }
-        if (pred == 1 && y == 1) tp++;
-        else if (pred == 1 && y == 0) fp++;
-        else if (pred == 0 && y == 0) {}
-        else fn++;
+        if (pred == 1 && y == 1) ++tp;
+        else if (pred == 1 && y == 0) ++fp;
+        else if (pred == 0 && y == 1) ++fn;
 
         scored.push_back(ScoredLabel{p, y});
     }
 
     loss /= static_cast<double>(data.x.size());
-    double acc = static_cast<double>(correct) / static_cast<double>(data.x.size());
-    double precision = (tp + fp) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fp);
-    double recall = (tp + fn) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fn);
-    double f1 = (precision + recall) == 0.0 ? 0.0 : 2.0 * precision * recall / (precision + recall);
+    const double acc = static_cast<double>(correct) / static_cast<double>(data.x.size());
+    const double precision = (tp + fp) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fp);
+    const double recall = (tp + fn) == 0 ? 0.0 : static_cast<double>(tp) / static_cast<double>(tp + fn);
+    const double f1 = (precision + recall) == 0.0 ? 0.0 : 2.0 * precision * recall / (precision + recall);
 
     std::cout << "Samples: " << data.x.size() << "\n";
     std::cout << "Binary cross-entropy: " << loss << "\n";
@@ -143,12 +142,12 @@ int main(int argc, char** argv) {
     std::cout << "Recall: " << recall << "\n";
     std::cout << "F1: " << f1 << "\n";
 
-    std::string roc_csv = "models/roc.csv";
+    const std::string roc_csv = "models/roc.csv";
     write_roc_csv(scored, roc_csv);
-    std::string cmd = "python3 scripts/roc_plot.py " + roc_csv;
-    int rc = std::system(cmd.c_str());
+    const int rc = utils::run_python_plot("scripts/roc_plot.py", roc_csv);
     if (rc != 0) {
         std::cout << "Warning: failed to generate ROC plot (exit code " << rc << ")\n";
     }
+
     return 0;
 }

@@ -18,7 +18,7 @@ struct Scaler {
 
 Dataset load_dataset(const std::string& csv_path);
 Scaler fit_minmax(const Dataset& data);
-void apply_minmax(Dataset& data, const Scaler& scaler);
+bool apply_minmax(Dataset& data, const Scaler& scaler);
 bool save_scaler(const std::string& path, const Scaler& scaler);
 bool load_scaler(const std::string& path, Scaler& scaler);
 

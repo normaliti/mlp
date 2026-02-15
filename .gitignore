@@ -17,3 +17,7 @@ en.subject.pdf
 
 # settings artifacts
 .vscode
+.DS_Store
+
+# scripts
+evaluation.py

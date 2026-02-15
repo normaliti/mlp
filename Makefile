@@ -14,10 +14,15 @@ COMMON_SRCS = \
 	$(SRC_DIR)/dataset.cpp \
 	$(SRC_DIR)/utils.cpp \
 	$(SRC_DIR)/mlp.cpp \
+	$(SRC_DIR)/mlp_forward.cpp \
+	$(SRC_DIR)/mlp_backward.cpp \
+	$(SRC_DIR)/mlp_train.cpp \
 	$(SRC_DIR)/mlp_io.cpp
 
 SPLIT_SRCS = $(SRC_DIR)/main_split.cpp
-TRAIN_SRCS = $(SRC_DIR)/main_train.cpp
+TRAIN_SRCS = \
+	$(SRC_DIR)/main_train.cpp \
+	$(SRC_DIR)/train_cli.cpp
 PREDICT_SRCS = $(SRC_DIR)/main_predict.cpp
 
 COMMON_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(COMMON_SRCS))

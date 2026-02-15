@@ -54,7 +54,9 @@ int main(int argc, char** argv) {
 
     // Spliting our data for two classes M and B
     for (size_t i = 0; i < all_data.rows.size(); i++) {
-
+        if (all_data.rows[i].size() < 2) {
+            continue;
+        }
         const std::string& label = all_data.rows[i][1];
         if (label == "M") {
             rows_m.push_back(all_data.rows[i]);

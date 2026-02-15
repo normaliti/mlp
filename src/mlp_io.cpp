@@ -25,19 +25,22 @@ static Activation activation_from_name(const std::string& name) {
 }
 
 bool save_model(const MLP& model, const std::string& path) {
-    if (model.layers_.empty() || model.sizes_.empty()) {
+    if (model.layers_.empty() || model.sizes_.size() < 2) {
         return false;
     }
+
     std::ofstream file(path.c_str());
     if (!file) {
         return false;
     }
+
     file << "layers " << model.sizes_.size() << "\n";
     for (size_t i = 0; i < model.sizes_.size(); ++i) {
         file << model.sizes_[i] << (i + 1 < model.sizes_.size() ? " " : "");
     }
     file << "\n";
     file << "activation " << activation_name(model.activation_) << "\n";
+
     for (size_t l = 0; l < model.layers_.size(); ++l) {
         const MLP::Layer& layer = model.layers_[l];
         file << "layer " << l << "\n";
@@ -54,7 +57,8 @@ bool save_model(const MLP& model, const std::string& path) {
         }
         file << "\n";
     }
-    return true;
+
+    return static_cast<bool>(file);
 }
 
 bool load_model(MLP& model, const std::string& path) {
@@ -62,58 +66,87 @@ bool load_model(MLP& model, const std::string& path) {
     if (!file) {
         return false;
     }
+
     std::string tag;
     size_t n_layers = 0;
-    file >> tag >> n_layers;
-    if (tag != "layers" || n_layers < 2) {
+    if (!(file >> tag >> n_layers) || tag != "layers" || n_layers < 2) {
         return false;
     }
-    model.sizes_.assign(n_layers, 0);
+
+    std::vector<int> sizes(n_layers, 0);
     for (size_t i = 0; i < n_layers; ++i) {
-        file >> model.sizes_[i];
+        if (!(file >> sizes[i]) || sizes[i] <= 0) {
+            return false;
+        }
     }
-    model.activation_ = Activation::Sigmoid;
-    model.layers_.clear();
-    file >> tag;
+
+    Activation activation = Activation::Sigmoid;
+    if (!(file >> tag)) {
+        return false;
+    }
     if (tag == "activation") {
         std::string name;
-        file >> name;
-        model.activation_ = activation_from_name(name);
-        file >> tag;
+        if (!(file >> name)) {
+            return false;
+        }
+        activation = activation_from_name(name);
+        if (!(file >> tag)) {
+            return false;
+        }
     }
+
+    std::vector<MLP::Layer> loaded_layers;
+    loaded_layers.reserve(n_layers - 1);
+
     for (size_t l = 0; l + 1 < n_layers; ++l) {
         if (tag != "layer") {
             return false;
         }
+
         size_t layer_idx = 0;
-        file >> layer_idx;
-        MLP::Layer layer;
-        size_t out = 0;
-        size_t in = 0;
-        file >> tag >> out >> in;
-        if (tag != "W") {
+        if (!(file >> layer_idx) || layer_idx != l) {
             return false;
         }
+
+        size_t out = 0;
+        size_t in = 0;
+        if (!(file >> tag >> out >> in) || tag != "W") {
+            return false;
+        }
+        if (out != static_cast<size_t>(sizes[l + 1]) || in != static_cast<size_t>(sizes[l])) {
+            return false;
+        }
+
+        MLP::Layer layer;
         layer.W.assign(out, std::vector<double>(in, 0.0));
         for (size_t i = 0; i < out; ++i) {
             for (size_t j = 0; j < in; ++j) {
-                file >> layer.W[i][j];
+                if (!(file >> layer.W[i][j])) {
+                    return false;
+                }
             }
         }
+
         size_t bsz = 0;
-        file >> tag >> bsz;
-        if (tag != "b") {
+        if (!(file >> tag >> bsz) || tag != "b" || bsz != out) {
             return false;
         }
         layer.b.assign(bsz, 0.0);
         for (size_t i = 0; i < bsz; ++i) {
-            file >> layer.b[i];
+            if (!(file >> layer.b[i])) {
+                return false;
+            }
         }
-        model.layers_.push_back(layer);
-        if (l + 2 < n_layers) {
-            file >> tag;
+
+        loaded_layers.push_back(layer);
+        if (l + 2 < n_layers && !(file >> tag)) {
+            return false;
         }
     }
+
+    model.sizes_ = sizes;
+    model.activation_ = activation;
+    model.layers_ = loaded_layers;
     return true;
 }
 

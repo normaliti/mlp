@@ -33,7 +33,7 @@ Arguments:
 Trains the network, saves scaler, model, and training history.
 
 ```
-./train <train_csv> <valid_csv> [scaler_out] [model_out] [options]
+./train <train_csv> <valid_csv> [options]
 ```
 
 Default outputs:
@@ -43,20 +43,19 @@ Default outputs:
 
 Example:
 ```
-./train data_training.csv data_validation.csv --epochs 50 --batch_size 8 --lr 0.1
+./train data_training.csv data_validation.csv --epochs 50 --batch_size 8 --lr 0.1 --seed 42
 ```
 
 Options:
 - `--layers 30 24 24 2`  (default: 30 24 24 2)
 - `--epochs 50`          (default: 50)
 - `--batch_size 8`       (default: 8)
-- `--lr 0.1`             (default: 0.01)
+- `--lr 0.1`             (default: 0.1)
 - `--activation sigmoid|tanh|relu` (default: sigmoid)
-
-You can also pass explicit output paths:
-```
-./train data_training.csv data_validation.csv models/scaler.txt models/model.txt --epochs 50 --batch_size 8 --lr 0.1
-```
+- `--seed 42`            (default: 42)
+- `--scaler_out models/scaler.txt` (default: models/scaler.txt)
+- `--model_out models/model.txt`   (default: models/model.txt)
+- `--history_out models/history.csv` (default: models/history.csv)
 
 ### 3) Predict
 Loads model + scaler and evaluates a dataset.
