@@ -1,23 +1,54 @@
-# build artifacts
-obj/
-split
-train
-predict
+# macOS
+.DS_Store
 
-# models / outputs
-models/
-*.log
+# Editors
+.vscode/
+.idea/
 
-# generated datasets
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# Test and coverage results
+.coverage
+coverage.xml
+htmlcov/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Generated datasets
 data/*
 !data/data.csv
 
-# subject file
+# Generated models, metrics, and plots
+artifacts/
+models/
+tmp/
+*.log
+
+# Local subject resources
 en.subject.pdf
-
-# settings artifacts
-.vscode
-.DS_Store
-
-# scripts
 evaluation.py
+check_list.pdf
+
+# Legacy C++ build artifacts
+cpp_version/obj/
+cpp_version/split
+cpp_version/train
+cpp_version/predict
+cpp_version/models/
