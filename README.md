@@ -138,10 +138,10 @@ mixing generated files with source code.
 ## 1. Dataset exploration and understanding
 
 - [ ] Document the meaning of the identifier, diagnosis, and 30 feature columns.
-- [ ] Verify that all feature values can be parsed as finite numbers.
-- [ ] Compute basic statistics for every feature: minimum, maximum, mean, and standard
+- [x] Verify that all feature values can be parsed as finite numbers.
+- [x] Compute basic statistics for every feature: minimum, maximum, mean, and standard
       deviation.
-- [ ] Inspect class imbalance (`M` versus `B`).
+- [x] Inspect class imbalance (`M` versus `B`).
 - [ ] Identify constant or near-constant features, if any.
 - [ ] Produce simple exploratory plots without using a machine-learning library.
 - [ ] Document why the identifier column must not be used as a feature.
@@ -152,7 +152,7 @@ every preprocessing decision.
 
 ## 2. Reproducible train/validation split
 
-- [ ] Implement CSV loading with clear validation and useful error messages.
+- [x] Implement CSV loading with clear validation and useful error messages.
 - [ ] Implement a deterministic shuffle controlled by `--seed`.
 - [ ] Implement a stratified split so both sets preserve the class distribution.
 - [ ] Support a configurable validation ratio with a documented default.
