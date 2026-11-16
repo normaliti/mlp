@@ -34,7 +34,7 @@ class MLP:
         if self.activation == "relu":
             return relu(values)
         raise ValueError(f"Unknown activation function: {self.activation}")
-    
+
     def forward (self, features):
         self.activations = [features]
         self.z_values = []
@@ -52,4 +52,3 @@ class MLP:
                 current_activation = self.hidden_activation(z)
             self.activations.append(current_activation)
         return current_activation
-    
