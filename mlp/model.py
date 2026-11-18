@@ -1,5 +1,13 @@
 import numpy as np
-from mlp.activations import relu, sigmoid, softmax, tanh
+from mlp.activations import (
+    relu,
+    relu_derivative,
+    sigmoid,
+    sigmoid_derivative,
+    softmax,
+    tanh,
+    tanh_derivative
+)
 
 class MLP:
     def __init__(self, layer_sizes, activation="sigmoid", seed=42):
@@ -35,6 +43,15 @@ class MLP:
             return relu(values)
         raise ValueError(f"Unknown activation function: {self.activation}")
 
+    def hidden_activation_derivative(self, values):
+        if self.activation == "sigmoid":
+            return sigmoid_derivative(values)
+        if self.activation == "tanh":
+            return tanh_derivative(values)
+        if self.activation == "relu":
+            return relu_derivative(values)
+        raise ValueError(f"Unknown activation function: {self.activation}")
+
     def forward (self, features):
         self.activations = [features]
         self.z_values = []
@@ -52,3 +69,33 @@ class MLP:
                 current_activation = self.hidden_activation(z)
             self.activations.append(current_activation)
         return current_activation
+
+    def backward(self, targets):
+        batch_size = targets.shape[0]
+        number_of_wlayers = len(self.weights)
+
+        self.weight_gradients = [None] * number_of_wlayers
+        self.bias_gradients = [None] * number_of_wlayers
+
+        predictions = self.activations[-1]
+        d_z = (predictions - targets) / batch_size
+
+        for layer_idx in range(number_of_wlayers - 1, -1, -1):
+            previous_activation = self.activations[layer_idx]
+
+            self.weight_gradients[layer_idx] = (previous_activation.T @ d_z)
+
+            self.bias_gradients[layer_idx] = np.sum(d_z, axis=0, keepdims=True)
+
+            if layer_idx > 0:
+                d_activation = (d_z @ self.weights[layer_idx].T)
+
+                activation_derivative = (self.hidden_activation_derivative(self.z_values[layer_idx - 1]))
+
+                d_z = (d_activation * activation_derivative)
+        return self.weight_gradients, self.bias_gradients
+
+    def update_parameters(self, learning_rate):
+        for idx in range(len(self.weights)):
+            self.weights[idx] -= learning_rate * self.weight_gradients[idx]
+            self.biases[idx] -= learning_rate * self.bias_gradients[idx]
