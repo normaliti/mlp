@@ -14,6 +14,8 @@ from mlp.train_utils import (
     train_model
 )
 
+from mlp.model_io import save_model
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -55,9 +57,13 @@ def parse_arguments():
         default=[24,24],
         help="sizes of hidden layers"
     )
+    parser.add_argument("--model-output", 
+                        default="artifacts/model.npz",
+                        help="Path for saving the trained model"
+                        )
     args = parser.parse_args()
     if len(args.layers) < 2:
-        parser.error("At least 2 hidden layers are requared")
+        parser.error("At least 2 hidden layers are required")
     for l_size in args.layers:
         if l_size <= 0:
             parser.error ("Layer size must be positive")
@@ -93,7 +99,9 @@ def main():
     print(f"train shape: {train_features.shape}")
     print(f"validation shape: {val_features.shape}")
 
-    train_model(model, train_data, val_data, config)
+    history = train_model(model, train_data, val_data, config)
+    save_model(args.model_output, model, mean, std)
 
 if __name__ == "__main__":
     main()
+    
