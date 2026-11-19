@@ -60,7 +60,7 @@ class MLP:
         last_layer_idx = len(self.weights) - 1
 
         for layer_idx in range(len(self.weights)):
-            z = current_activation @ self.weights[layer_idx] + self.biases[layer_idx]
+            z = np.dot(current_activation, self.weights[layer_idx]) + self.biases[layer_idx]
             self.z_values.append(z)
 
             if layer_idx == last_layer_idx:
@@ -83,12 +83,12 @@ class MLP:
         for layer_idx in range(number_of_wlayers - 1, -1, -1):
             previous_activation = self.activations[layer_idx]
 
-            self.weight_gradients[layer_idx] = (previous_activation.T @ d_z)
+            self.weight_gradients[layer_idx] = np.dot(previous_activation.T, d_z)
 
             self.bias_gradients[layer_idx] = np.sum(d_z, axis=0, keepdims=True)
 
             if layer_idx > 0:
-                d_activation = (d_z @ self.weights[layer_idx].T)
+                d_activation = np.dot(d_z, self.weights[layer_idx].T)
 
                 activation_derivative = (self.hidden_activation_derivative(self.z_values[layer_idx - 1]))
 
