@@ -11,10 +11,14 @@ from mlp.preprocessing import (
 from mlp.train_utils import (
     PreparedDataset,
     TrainingConfig,
-    train_model
+    train_model,
+    confusion_matrix,
+    print_conf_matrix,
+    print_classification_metrics    
 )
 
 from mlp.model_io import save_model
+from mlp.plots import save_plots
 
 
 def parse_arguments():
@@ -61,12 +65,25 @@ def parse_arguments():
                         default="artifacts/model.npz",
                         help="Path for saving the trained model"
                         )
+    parser.add_argument("--plots-dir",
+                        default="artifacts/plots",
+                        help="Directory for learning curves"
+                        )
+    parser.add_argument("--early-stopping",
+                        action="store_true",
+                        help="Use early stopping strategy")
     args = parser.parse_args()
     if len(args.layers) < 2:
         parser.error("At least 2 hidden layers are required")
     for l_size in args.layers:
         if l_size <= 0:
             parser.error ("Layer size must be positive")
+    if args.epochs <= 0:
+        parser.error ("Number of epochs must be positive")
+    if args.batch_size <= 0:
+        parser.error ("Batch size must be positive")
+    if args.learning_rate <= 0:
+        parser.error ("Learning rate must be positive")
     return args
 
 def main():
@@ -91,7 +108,8 @@ def main():
     config = TrainingConfig(epochs=args.epochs,
                             learning_rate=args.learning_rate,
                             batch_size=args.batch_size,
-                            seed = args.seed)
+                            seed = args.seed,
+                            early_stopping=args.early_stopping)
     layer_sizes = [train_features.shape[1], *args.layers, 2]
     model = MLP(layer_sizes=layer_sizes,
                 activation=args.activation,
@@ -100,8 +118,12 @@ def main():
     print(f"validation shape: {val_features.shape}")
 
     history = train_model(model, train_data, val_data, config)
+    val_predictions = model.forward(val_data.features)
+    val_matrix = confusion_matrix(val_data.targets, val_predictions)
+    print_conf_matrix(val_matrix)
+    print_classification_metrics(val_matrix)
+    save_plots(history, args.plots_dir)
     save_model(args.model_output, model, mean, std)
 
 if __name__ == "__main__":
     main()
-    
