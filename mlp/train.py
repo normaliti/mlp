@@ -48,8 +48,20 @@ def parse_arguments():
         choices=["sigmoid", "tanh", "relu"],
         default="sigmoid",
     )
-
-    return parser.parse_args()
+    parser.add_argument(
+        "--layers",
+        type = int,
+        nargs="+",
+        default=[24,24],
+        help="sizes of hidden layers"
+    )
+    args = parser.parse_args()
+    if len(args.layers) < 2:
+        parser.error("At least 2 hidden layers are requared")
+    for l_size in args.layers:
+        if l_size <= 0:
+            parser.error ("Layer size must be positive")
+    return args
 
 def main():
     args = parse_arguments()
@@ -74,7 +86,8 @@ def main():
                             learning_rate=args.learning_rate,
                             batch_size=args.batch_size,
                             seed = args.seed)
-    model = MLP(layer_sizes=[train_features.shape[1], 24,24,2],
+    layer_sizes = [train_features.shape[1], *args.layers, 2]
+    model = MLP(layer_sizes=layer_sizes,
                 activation=args.activation,
                 seed = args.seed)
     print(f"train shape: {train_features.shape}")
