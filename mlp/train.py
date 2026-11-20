@@ -122,8 +122,8 @@ def main():
     val_matrix = confusion_matrix(val_data.targets, val_predictions)
     print_conf_matrix(val_matrix)
     print_classification_metrics(val_matrix)
-    save_plots(history, args.plots_dir)
     save_model(args.model_output, model, mean, std)
+    save_plots(history, args.plots_dir)
 
 if __name__ == "__main__":
     main()
